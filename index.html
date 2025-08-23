@@ -33,6 +33,15 @@
     .cards { margin-top: 10px; font-size: 1.5em; }
     #winner { font-size: 2em; margin-top: 20px; text-align: center; color: green; }
     #history { margin-top: 20px; font-size: 0.9em; background: #fff; padding: 10px; border-radius: 8px; max-height: 150px; overflow-y: auto; }
+
+    /* +1ポイントボタン専用 */
+    .point-btn {
+      font-size: 2em;      
+      padding: 12px 24px;  
+      font-weight: bold;
+      background-color: #ffeb3b; 
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -65,7 +74,7 @@
           <h2>Player A <span id="serveA" class="serve-dot"></span></h2>
           <div class="score" id="scoreA">0</div>
           <div>Games: <span id="gamesA">0</span></div>
-          <button onclick="addPoint('A')">+1 Point</button>
+          <button class="point-btn" onclick="addPoint('A')">+1 Point</button>
           <button onclick="removePoint('A')">-1 Point</button><br>
           <button onclick="timeout('A')">Timeout</button>
           <button onclick="removeCard('A','timeout')">Undo Timeout</button>
@@ -76,7 +85,7 @@
           <h2>Player B <span id="serveB" class="serve-dot"></span></h2>
           <div class="score" id="scoreB">0</div>
           <div>Games: <span id="gamesB">0</span></div>
-          <button onclick="addPoint('B')">+1 Point</button>
+          <button class="point-btn" onclick="addPoint('B')">+1 Point</button>
           <button onclick="removePoint('B')">-1 Point</button><br>
           <button onclick="timeout('B')">Timeout</button>
           <button onclick="removeCard('B','timeout')">Undo Timeout</button>
