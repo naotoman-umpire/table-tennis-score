@@ -7,7 +7,7 @@
     body { 
       font-family: Arial, sans-serif; 
       margin: 0; padding: 20px; 
-      background: green; /* 背景を緑に */
+      background: green;
     }
     .overlay {
       background: rgba(255,255,255,0.95);
@@ -124,6 +124,12 @@
     let GAMES_TO_WIN = 3;
     let gameNumber = 1;
 
+    // カード管理用
+    let cardCount = {
+      A: { yellow: 0, red: 0, timeout: 0 },
+      B: { yellow: 0, red: 0, timeout: 0 }
+    };
+
     function setMatchType() {
       let type = document.getElementById("matchType").value;
       GAMES_TO_WIN = parseInt(type);
@@ -179,56 +185,51 @@
     }
 
     function nextGame() {
-      if (isGameFinished()) {
-        if (scoreA > scoreB) gamesA++;
-        else gamesB++;
-        document.getElementById('gamesA').innerText = gamesA;
-        document.getElementById('gamesB').innerText = gamesB;
+      if (!isGameFinished()) return;
+      if (scoreA > scoreB) gamesA++;
+      else gamesB++;
+      document.getElementById('gamesA').innerText = gamesA;
+      document.getElementById('gamesB').innerText = gamesB;
 
-        // 履歴に追加（スコアも）
-        let history = document.getElementById('historyList');
-        let li = document.createElement('li');
-        li.innerText = `Game ${gameNumber}: ${scoreA}-${scoreB}, Winner ${scoreA>scoreB?'Player A':'Player B'}, First Server ${firstServer}`;
-        history.appendChild(li);
+      // 履歴に追加
+      let history = document.getElementById('historyList');
+      let li = document.createElement('li');
+      li.innerText = `Game ${gameNumber}: ${scoreA}-${scoreB}, Winner ${scoreA>scoreB?'Player A':'Player B'}, First Server ${firstServer}`;
+      history.appendChild(li);
 
-        // 次のゲームへ
-        gameNumber++;
-        scoreA = 0; scoreB = 0;
-        firstServer = (firstServer === 'A') ? 'B' : 'A'; 
-        updateScores();
-        updateServer();
-      }
+      gameNumber++;
+      scoreA = 0; scoreB = 0;
+      firstServer = (firstServer === 'A') ? 'B' : 'A';
+      updateScores();
+      updateServer();
+    }
+
+    // カード関数
+    function updateCards(player) {
+      let el = (player==='A') ? document.getElementById('cardsA') : document.getElementById('cardsB');
+      let cards = [];
+      for(let i=0;i<cardCount[player].timeout;i++) cards.push("⬜");
+      for(let i=0;i<cardCount[player].yellow;i++) cards.push("🟨");
+      for(let i=0;i<cardCount[player].red;i++) cards.push("🟥");
+      el.innerText = cards.join("");
     }
 
     function card(player, type) {
-      let el = (player === 'A') ? document.getElementById('cardsA') : document.getElementById('cardsB');
-      let cards = el.innerText.split("");
-      if (type === 'timeout') {
-        // ⬜ を必ず左に
-        if (!cards.includes("⬜")) cards.unshift("⬜");
-      } else if (type === 'yellow') {
-        cards.push("🟨");
-      } else if (type === 'red') {
-        cards.push("🟥");
+      if(cardCount[player][type]!==undefined) {
+        cardCount[player][type]++;
+        updateCards(player);
       }
-      el.innerText = cards.join("");
-    }
-
-    function timeout(player) {
-      card(player, 'timeout');
     }
 
     function removeCard(player, type) {
-      let el = (player === 'A') ? document.getElementById('cardsA') : document.getElementById('cardsB');
-      let cards = el.innerText.split("");
-      if (type==='timeout') cards = cards.filter(c => c!=="⬜");
-      if (type==='yellow') {
-        let idx = cards.indexOf("🟨"); if (idx>=0) cards.splice(idx,1);
+      if(cardCount[player][type] && cardCount[player][type]>0) {
+        cardCount[player][type]--;
+        updateCards(player);
       }
-      if (type==='red') {
-        let idx = cards.indexOf("🟥"); if (idx>=0) cards.splice(idx,1);
-      }
-      el.innerText = cards.join("");
+    }
+
+    function timeout(player) {
+      card(player,'timeout');
     }
 
     function resetMatch() {
@@ -237,8 +238,9 @@
       document.getElementById('scoreB').innerText = scoreB;
       document.getElementById('gamesA').innerText = gamesA;
       document.getElementById('gamesB').innerText = gamesB;
-      document.getElementById('cardsA').innerText="";
-      document.getElementById('cardsB').innerText="";
+      cardCount = { A: { yellow:0, red:0, timeout:0 }, B: { yellow:0, red:0, timeout:0 } };
+      updateCards('A');
+      updateCards('B');
       document.getElementById('historyList').innerHTML="";
       setFirstServer();
     }
