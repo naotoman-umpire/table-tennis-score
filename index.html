@@ -165,6 +165,7 @@ let cardCount={A:{yellow:0,red:0,timeout:0},B:{yellow:0,red:0,timeout:0}};
 let historyStack=[];
 let timerInterval=null,timerSeconds=0,timerLabel="";
 let leftPlayer='A', rightPlayer='B';
+let playingStartTime=null, playingTime=0;
 
 // ----------------------------
 // サーブ/左右選択
@@ -202,20 +203,64 @@ function showTab(tabId){ document.querySelectorAll('.tab').forEach(t=>t.classLis
 
 // ----------------------------
 // サーブ・プレー表示
-function serve(player){ document.getElementById("playStatus").innerText="PLAYING..."; }
-function letServe(){ document.getElementById("playStatus").innerText=""; alert("LET! サーブやり直し"); }
+function serve(player){
+  document.getElementById("playStatus").innerText="PLAYING...";
+  if(!playingStartTime) playingStartTime=Date.now();
+}
+function letServe(){
+  document.getElementById("playStatus").innerText=""; 
+}
 
 // ----------------------------
 // ポイント・ゲーム
 function saveState(){ historyStack.push({scoreA,scoreB,gamesA,gamesB,cardCount:JSON.parse(JSON.stringify(cardCount))}); }
 function undo(){ if(historyStack.length>0){ let last=historyStack.pop(); scoreA=last.scoreA; scoreB=last.scoreB; gamesA=last.gamesA; gamesB=last.gamesB; cardCount=last.cardCount; updateScores(); updateCards('A'); updateCards('B'); document.getElementById('gamesA').innerText=gamesA; document.getElementById('gamesB').innerText=gamesB; updatePointStatus(); } }
-function addPoint(player){ saveState(); if(isGameFinished()) return; if(player==='A') scoreA++; else scoreB++; updateScores(); updateServer(); updatePointStatus(); document.getElementById("playStatus").innerText=""; }
+function addPoint(player){
+  saveState();
+  if(isGameFinished()) return;
+  if(player==='A') scoreA++; else scoreB++;
+  updateScores(); updateServer(); updatePointStatus();
+
+  if(playingStartTime){
+    let elapsed = Math.floor((Date.now() - playingStartTime)/1000);
+    playingTime += elapsed;
+    playingStartTime = null;
+  }
+  document.getElementById("playStatus").innerText="";
+}
+
 function removePoint(player){ saveState(); if(player==='A' && scoreA>0) scoreA--; if(player==='B' && scoreB>0) scoreB--; updateScores(); updateServer(); updatePointStatus(); }
+
 function updateScores(){ document.getElementById('scoreA').innerText=scoreA; document.getElementById('scoreB').innerText=scoreB; }
 function isGameFinished(){ return ((scoreA>=11||scoreB>=11)&&Math.abs(scoreA-scoreB)>=2); }
 function updateServer(){ if(isGameFinished()){ document.getElementById('serveA').innerText=""; document.getElementById('serveB').innerText=""; return; } let total=scoreA+scoreB; if(scoreA>=10 && scoreB>=10){ serveTurn=(total%2===0)?firstServer:(firstServer==='A'?'B':'A'); } else { serveTurn=(Math.floor(total/2)%2===0)?firstServer:(firstServer==='A'?'B':'A'); } document.getElementById('serveA').innerText=(serveTurn==='A')?"🔴":""; document.getElementById('serveB').innerText=(serveTurn==='B')?"🔴":""; }
 function updatePointStatus(){ let statusA="", statusB=""; if(scoreA>=10 && scoreA>scoreB && !isGameFinished()) statusA="GAME POINT"; if(scoreB>=10 && scoreB>scoreA && !isGameFinished()) statusB="GAME POINT"; if(gamesA===GAMES_TO_WIN-1 && scoreA>=10 && !isGameFinished()) statusA="MATCH POINT"; if(gamesB===GAMES_TO_WIN-1 && scoreB>=10 && !isGameFinished()) statusB="MATCH POINT"; document.getElementById('pointAStatus').innerText=statusA; document.getElementById('pointBStatus').innerText=statusB; }
-function nextGame(){ if(!isGameFinished()){ timeout('A'); return; } saveState(); if(scoreA>scoreB){ gamesA++; document.getElementById('gamesA').innerText=gamesA; } else { gamesB++; document.getElementById('gamesB').innerText=gamesB; } let li=document.createElement('li'); li.innerText=`GAME ${gameNumber}: ${scoreA}-${scoreB}, WINNER ${scoreA>scoreB?'PLAYER A':'PLAYER B'}, FIRST SERVER ${firstServer}`; document.getElementById('historyList').appendChild(li); gameNumber++; scoreA=0; scoreB=0; firstServer=(firstServer==='A')?'B':'A'; [leftPlayer,rightPlayer]=[rightPlayer,leftPlayer]; updatePlayerPositions(); updateScores(); updateServer(); updatePointStatus(); }
+
+function nextGame(){
+  if(!isGameFinished()){ timeout('A'); return; }
+  saveState();
+
+  if(scoreA>scoreB){ gamesA++; document.getElementById('gamesA').innerText=gamesA; } 
+  else { gamesB++; document.getElementById('gamesB').innerText=gamesB; }
+
+  if(playingStartTime){
+    let elapsed = Math.floor((Date.now() - playingStartTime)/1000);
+    playingTime += elapsed;
+    playingStartTime = null;
+  }
+
+  let minutes = Math.floor(playingTime/60);
+  let seconds = playingTime%60;
+
+  let li = document.createElement('li');
+  li.innerText = `GAME ${gameNumber}: ${scoreA}-${scoreB}, WINNER ${scoreA>scoreB?'PLAYER A':'PLAYER B'}, FIRST SERVER ${firstServer}, PLAYING TIME ${minutes}m${seconds}s`;
+  document.getElementById('historyList').appendChild(li);
+
+  gameNumber++; scoreA=0; scoreB=0; playingTime=0;
+  firstServer=(firstServer==='A')?'B':'A';
+  [leftPlayer,rightPlayer]=[rightPlayer,leftPlayer]; updatePlayerPositions();
+  updateScores(); updateServer(); updatePointStatus();
+}
 
 // ----------------------------
 // カード管理
@@ -226,13 +271,14 @@ function timeout(player){ prepareTimer('TIMEOUT'); card(player,'timeout'); }
 function setMatchType(){ GAMES_TO_WIN=parseInt(document.getElementById("matchType").value); resetMatch(); }
 
 // ----------------------------
-// リセット
+// リセット（カードも初期化）
 function resetMatch(){
   scoreA = 0; scoreB = 0; 
   gamesA = 0; gamesB = 0; 
   gameNumber = 1; 
   cardCount = {A:{yellow:0,red:0,timeout:0},B:{yellow:0,red:0,timeout:0}};
   historyStack = []; 
+  playingStartTime=null; playingTime=0;
 
   document.getElementById('gamesA').innerText = 0;
   document.getElementById('gamesB').innerText = 0;
