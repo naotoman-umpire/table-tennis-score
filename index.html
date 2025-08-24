@@ -23,8 +23,6 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
 .cards .yellow { background:#FFD700; }
 .cards .red { background:#FF0000; }
 .status { font-size:1.5em; font-weight:bold; color:orange; margin-top:10px; }
-#winner { font-size:2em; margin-top:20px; text-align:center; color:green; }
-#history { margin-top:20px; font-size:0.9em; background:#fff; padding:10px; border-radius:8px; max-height:150px; overflow-y:auto; }
 .point-btn { font-size:1.5em; padding:12px 24px; font-weight:bold; background-color:#ffeb3b; border-radius:8px; }
 #timerDisplay { font-size:3em; font-weight:bold; color:red; text-align:center; margin:10px 0; }
 #timerControls { text-align:center; display:none; margin-bottom:10px; }
@@ -54,14 +52,12 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
 </head>
 <body>
 
-<!-- サーブ選択画面 -->
 <div class="overlay" id="startScreen">
   <h1>SELECT FIRST SERVER</h1>
   <button onclick="selectServer('A')">PLAYER A</button>
   <button onclick="selectServer('B')">PLAYER B</button>
 </div>
 
-<!-- 左右選択画面 -->
 <div class="overlay" id="positionScreen" style="display:none;">
   <h1>SELECT PLAYER ON LEFT</h1>
   <button onclick="selectPosition('A')">PLAYER A LEFT</button>
@@ -69,7 +65,6 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   <button onclick="backToServerSelection()">BACK</button>
 </div>
 
-<!-- メイン画面 -->
 <div class="overlay" id="mainScreen" style="display:none;">
 <h2>⚪ TABLE TENNIS SCOREBOARD</h2>
 
@@ -101,6 +96,7 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
 <div class="tabs">
   <div class="tab active" onclick="showTab('scoreTab', event)">Score & Timeout</div>
   <div class="tab" onclick="showTab('cardsTab', event)">Cards</div>
+  <div class="tab" onclick="showTab('historyTab', event)">History</div>
 </div>
 
 <div id="scoreTab" class="tab-content active">
@@ -133,13 +129,11 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   <button onclick="resetMatch()">RESET MATCH</button>
   <button onclick="undo()">UNDO LAST ACTION</button>
 
-  <!-- サーブ・レット丸ボタン + プレイングタイマー -->
   <div id="serveLetContainer">
     <button onclick="servePoint()">SERVE</button>
     <button onclick="letPoint()">LET</button>
     <span id="playingTimerDisplay">0.0s</span>
   </div>
-
 </div>
 
 <div id="cardsTab" class="tab-content">
@@ -162,8 +156,8 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   </div>
 </div>
 
-<div id="history">
-  <h4>GAME HISTORY</h4>
+<div id="historyTab" class="tab-content">
+  <h3>GAME HISTORY</h3>
   <ul id="historyList"></ul>
 </div>
 
@@ -187,23 +181,13 @@ function correctServer(){ document.getElementById('mainScreen').style.display='n
 function updatePlayerPositions(){ const court=document.getElementById('court'); court.appendChild(document.getElementById('player'+leftPlayer)); court.appendChild(document.getElementById('player'+rightPlayer)); }
 
 // ----------------------------
-// タイマー
-function prepareTimer(type){ timerLabel = type; if(type==="WARM UP") timerSeconds=120; else if(type==="WATER BREAK") timerSeconds=60; else if(type==="TIMEOUT") timerSeconds=60; updateTimerDisplay(); showTimerButtons(true); document.getElementById('clearTimerBtn').style.display="inline-block"; clearInterval(timerInterval); if(type==="TIMEOUT"){ timerInterval = setInterval(()=>{ if(timerSeconds>0){ timerSeconds--; updateTimerDisplay(); } else { forceEndTimer(); } },1000); } }
-function showTimerButtons(show){ document.getElementById('timerControls').style.display=show?'block':'none'; }
-function startTimer(){ clearInterval(timerInterval); timerInterval=setInterval(()=>{ if(timerSeconds>0){ timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); } },1000); }
-function stopTimer(){ clearInterval(timerInterval); }
-function resetTimer(){ if(timerLabel==="WARM UP") timerSeconds=120; else timerSeconds=(timerLabel==="WATER BREAK")?60:60; updateTimerDisplay(); }
-function forceEndTimer(){ clearInterval(timerInterval); timerSeconds=0; timerLabel=""; document.getElementById('timerDisplay').innerText=""; showTimerButtons(false); document.getElementById('clearTimerBtn').style.display="none"; }
-function updateTimerDisplay(){ document.getElementById('timerDisplay').innerText=`${timerLabel} ${timerSeconds}s`; }
-
-// ----------------------------
 // タブ切替
 function showTab(tabId, event){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); event.target.classList.add('active'); document.getElementById(tabId).classList.add('active'); }
 
 // ----------------------------
-// ポイント・ゲーム
-function saveState(){ historyStack.push({scoreA,scoreB,gamesA,gamesB,cardCount:JSON.parse(JSON.stringify(cardCount))}); }
-function undo(){ if(historyStack.length>0){ let last=historyStack.pop(); scoreA=last.scoreA; scoreB=last.scoreB; gamesA=last.gamesA; gamesB=last.gamesB; cardCount=last.cardCount; updateScores(); updateCards('A'); updateCards('B'); document.getElementById('gamesA').innerText=gamesA; document.getElementById('gamesB').innerText=gamesB; updatePointStatus(); } }
+// ポイント・ゲーム管理
+function saveState(){ historyStack.push({scoreA,scoreB,gamesA,gamesB,cardCount:JSON.parse(JSON.stringify(cardCount)),playingSeconds}); }
+function undo(){ if(historyStack.length>0){ let last=historyStack.pop(); scoreA=last.scoreA; scoreB=last.scoreB; gamesA=last.gamesA; gamesB=last.gamesB; cardCount=last.cardCount; playingSeconds=last.playingSeconds; updateScores(); updateCards('A'); updateCards('B'); document.getElementById('gamesA').innerText=gamesA; document.getElementById('gamesB').innerText=gamesB; updatePointStatus(); updatePlayingTimerDisplay(); } }
 function addPoint(player){ saveState(); if(isGameFinished()) return; if(player==='A') scoreA++; else scoreB++; updateScores(); updateServer(); updatePointStatus(); stopPlayingTimer(); }
 function removePoint(player){ saveState(); if(player==='A' && scoreA>0) scoreA--; if(player==='B' && scoreB>0) scoreB--; updateScores(); updateServer(); updatePointStatus(); stopPlayingTimer(); }
 function updateScores(){ document.getElementById('scoreA').innerText=scoreA; document.getElementById('scoreB').innerText=scoreB; }
@@ -220,11 +204,21 @@ function timeout(player){ prepareTimer('TIMEOUT'); card(player,'timeout'); }
 function setMatchType(){ GAMES_TO_WIN=parseInt(document.getElementById("matchType").value); resetMatch(); }
 
 // ----------------------------
-// プレイングタイマー関連
+// プレイングタイマー
 function servePoint(){ stopPlayingTimer(); let lastTime = Date.now(); playingTimerInterval = setInterval(()=>{ const now = Date.now(); playingSeconds += (now-lastTime)/1000; lastTime = now; updatePlayingTimerDisplay(); }, 50); }
 function letPoint(){ stopPlayingTimer(); }
 function stopPlayingTimer(){ clearInterval(playingTimerInterval); updatePlayingTimerDisplay(); }
 function updatePlayingTimerDisplay(){ const minutes=Math.floor(playingSeconds/60); const seconds=(playingSeconds%60).toFixed(1); document.getElementById('playingTimerDisplay').innerText = `${minutes}m${seconds}s`; }
+
+// ----------------------------
+// タイマー
+function prepareTimer(type){ timerLabel = type; if(type==="WARM UP") timerSeconds=120; else if(type==="WATER BREAK") timerSeconds=60; else if(type==="TIMEOUT") timerSeconds=60; updateTimerDisplay(); showTimerButtons(true); document.getElementById('clearTimerBtn').style.display="inline-block"; clearInterval(timerInterval); if(type==="TIMEOUT"){ timerInterval = setInterval(()=>{ if(timerSeconds>0){ timerSeconds--; updateTimerDisplay(); } else { forceEndTimer(); } },1000); } }
+function showTimerButtons(show){ document.getElementById('timerControls').style.display=show?'block':'none'; }
+function startTimer(){ clearInterval(timerInterval); timerInterval=setInterval(()=>{ if(timerSeconds>0){ timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); } },1000); }
+function stopTimer(){ clearInterval(timerInterval); }
+function resetTimer(){ if(timerLabel==="WARM UP") timerSeconds=120; else timerSeconds=(timerLabel==="WATER BREAK")?60:60; updateTimerDisplay(); }
+function forceEndTimer(){ clearInterval(timerInterval); timerSeconds=0; timerLabel=""; document.getElementById('timerDisplay').innerText=""; showTimerButtons(false); document.getElementById('clearTimerBtn').style.display="none"; }
+function updateTimerDisplay(){ document.getElementById('timerDisplay').innerText=`${timerLabel} ${timerSeconds}s`; }
 
 // ----------------------------
 // 次ゲーム
@@ -243,7 +237,7 @@ function nextGame(){
 }
 
 // ----------------------------
-// リセット（カードも初期化）
+// リセット
 function resetMatch(){
   scoreA = 0; scoreB = 0; gamesA = 0; gamesB = 0; gameNumber = 1; 
   cardCount = {A:{yellow:0,red:0,timeout:0},B:{yellow:0,red:0,timeout:0}}; historyStack = []; playingSeconds=0; stopPlayingTimer();
@@ -260,5 +254,6 @@ function resetMatch(){
   document.getElementById('mainScreen').style.display = 'none'; document.getElementById('startScreen').style.display = 'flex';
 }
 </script>
+
 </body>
 </html>
