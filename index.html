@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <title>Table Tennis Scoreboard</title>
@@ -13,10 +13,16 @@ body { font-family: Arial, sans-serif; margin:0; padding:0; background:green; di
 .tab-content.active { display:block; }
 .players { display:flex; justify-content:space-around; }
 .player { text-align:center; width:40%; position:relative; }
-.score { font-size:10em; margin:10px; }
+.player-score { display:flex; align-items:center; justify-content:center; }
+.score { font-size:8em; margin:10px; }
+.serve { font-size:2em; margin-left:10px; } /* 赤丸大きく */
 button { font-size:1em; margin:5px; padding:8px 16px; }
-.cards { margin-top:10px; font-size:1.5em; }
-.status { font-size:2em; font-weight:bold; color:orange; margin-top:10px; }
+.cards { margin-top:10px; display:flex; justify-content:center; }
+.cards span { display:inline-block; width:25px; height:35px; margin:2px; border-radius:4px; }
+.cards .timeout { background:#ffffff; border:1px solid #ccc; }
+.cards .yellow { background:#FFD700; }
+.cards .red { background:#FF0000; }
+.status { font-size:1.5em; font-weight:bold; color:orange; margin-top:10px; }
 #winner { font-size:2em; margin-top:20px; text-align:center; color:green; }
 #history { margin-top:20px; font-size:0.9em; background:#fff; padding:10px; border-radius:8px; max-height:150px; overflow-y:auto; }
 .point-btn { font-size:1.5em; padding:12px 24px; font-weight:bold; background-color:#ffeb3b; border-radius:8px; }
@@ -60,7 +66,7 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   </select>
   &nbsp;&nbsp; First Server:
   <span id="firstServerDisplay"></span>
-  <button onclick="correctServer()" style="font-size:0.9em; padding:4px 8px;">CORRECT SERVER</button>
+  <button onclick="correctServer()" style="font-size:0.8em;">Correct Server</button>
 </div>
 
 <div class="tabs">
@@ -71,8 +77,9 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
 <div id="scoreTab" class="tab-content active">
   <div class="players" id="court">
     <div class="player" id="playerA">
-      <h2>PLAYER A <span id="serveA"></span></h2>
-      <div><span id="scoreA" class="score">0</span> <span id="pointAStatus" class="status"></span></div>
+      <h2>PLAYER A</h2>
+      <div class="player-score"><span id="scoreA" class="score">0</span><span id="serveA" class="serve"></span></div>
+      <div><span id="pointAStatus" class="status"></span></div>
       <div>Games: <span id="gamesA">0</span></div>
       <button class="point-btn" onclick="addPoint('A')">+1 POINT</button>
       <button onclick="removePoint('A')">-1 POINT</button><br>
@@ -82,8 +89,9 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
     </div>
 
     <div class="player" id="playerB">
-      <h2>PLAYER B <span id="serveB"></span></h2>
-      <div><span id="scoreB" class="score">0</span> <span id="pointBStatus" class="status"></span></div>
+      <h2>PLAYER B</h2>
+      <div class="player-score"><span id="scoreB" class="score">0</span><span id="serveB" class="serve"></span></div>
+      <div><span id="pointBStatus" class="status"></span></div>
       <div>Games: <span id="gamesB">0</span></div>
       <button class="point-btn" onclick="addPoint('B')">+1 POINT</button>
       <button onclick="removePoint('B')">-1 POINT</button><br>
@@ -131,20 +139,20 @@ let cardCount={A:{yellow:0,red:0,timeout:0},B:{yellow:0,red:0,timeout:0}};
 let historyStack=[];
 let timerInterval=null,timerSeconds=0,timerLabel="";
 
+// サーブ選択
 function selectServer(player){
   firstServer=player; serveTurn=firstServer;
   document.getElementById('firstServerDisplay').innerText=firstServer;
-  document.getElementById('serveA').innerText=(firstServer==='A')?"🔴":""; 
-  document.getElementById('serveB').innerText=(firstServer==='B')?"🔴":""; 
+  updateServer();
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainScreen').style.display='block';
 }
-
 function correctServer(){
   document.getElementById('mainScreen').style.display='none';
   document.getElementById('startScreen').style.display='flex';
 }
 
+// タイマー
 function prepareTimer(type){ timerLabel=type; timerSeconds=(type==="WARM UP")?120:60; updateTimerDisplay(); showTimerButtons(true); clearInterval(timerInterval);}
 function showTimerButtons(show){ document.getElementById('timerControls').style.display=show?'block':'none'; }
 function startTimer(){ clearInterval(timerInterval); timerInterval=setInterval(()=>{ if(timerSeconds>0){ timerSeconds--; updateTimerDisplay(); } else { clearInterval(timerInterval); clearTimerDisplay(); } },1000); }
@@ -153,24 +161,66 @@ function resetTimer(){ timerSeconds=(timerLabel==="WARM UP")?120:60; updateTimer
 function clearTimerDisplay(){ clearInterval(timerInterval); document.getElementById('timerDisplay').innerText=""; showTimerButtons(false); }
 function updateTimerDisplay(){ document.getElementById('timerDisplay').innerText=`${timerLabel} ${timerSeconds}s`; }
 
+// タブ切替
 function showTab(tabId){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); event.target.classList.add('active'); document.getElementById(tabId).classList.add('active'); }
 
+// ポイント・ゲーム
 function saveState(){ historyStack.push({scoreA,scoreB,gamesA,gamesB,cardCount:JSON.parse(JSON.stringify(cardCount))}); }
 function undo(){ if(historyStack.length>0){ let last=historyStack.pop(); scoreA=last.scoreA; scoreB=last.scoreB; gamesA=last.gamesA; gamesB=last.gamesB; cardCount=last.cardCount; updateScores(); updateCards('A'); updateCards('B'); document.getElementById('gamesA').innerText=gamesA; document.getElementById('gamesB').innerText=gamesB; updatePointStatus(); } }
 function addPoint(player){ saveState(); if(isGameFinished()) return; if(player==='A') scoreA++; else scoreB++; updateScores(); updateServer(); updatePointStatus(); }
 function removePoint(player){ saveState(); if(player==='A' && scoreA>0) scoreA--; if(player==='B' && scoreB>0) scoreB--; updateScores(); updateServer(); updatePointStatus(); }
 function updateScores(){ document.getElementById('scoreA').innerText=scoreA; document.getElementById('scoreB').innerText=scoreB; }
 function isGameFinished(){ return ((scoreA>=11||scoreB>=11)&&Math.abs(scoreA-scoreB)>=2); }
-function updateServer(){ let total=scoreA+scoreB; if(scoreA>=10 && scoreB>=10){ serveTurn=(total%2===0)?firstServer:(firstServer==='A'?'B':'A'); } else { serveTurn=(Math.floor(total/2)%2===0)?firstServer:(firstServer==='A'?'B':'A'); } document.getElementById('serveA').innerText=(serveTurn==='A')?"🔴":""; document.getElementById('serveB').innerText=(serveTurn==='B')?"🔴":""; }
-function updatePointStatus(){ let statusA="",statusB=""; if(scoreA>=10 && scoreA>scoreB && !isGameFinished()) statusA="GAME POINT"; if(scoreB>=10 && scoreB>scoreA && !isGameFinished()) statusB="GAME POINT"; if(gamesA===GAMES_TO_WIN-1 && scoreA>=10 && !isGameFinished()) statusA="MATCH POINT"; if(gamesB===GAMES_TO_WIN-1 && scoreB>=10 && !isGameFinished()) statusB="MATCH POINT"; document.getElementById('pointAStatus').innerText=statusA; document.getElementById('pointBStatus').innerText=statusB; }
-function nextGame(){ if(!isGameFinished()){ prepareTimer("WATER BREAK"); return; } saveState(); if(scoreA>scoreB) gamesA++; else gamesB++; document.getElementById('gamesA').innerText=gamesA; document.getElementById('gamesB').innerText=gamesB; let li=document.createElement('li'); li.innerText=`GAME ${gameNumber}: ${scoreA}-${scoreB}, WINNER ${scoreA>scoreB?'PLAYER A':'PLAYER B'}, FIRST SERVER ${firstServer}`; document.getElementById('historyList').appendChild(li); gameNumber++; scoreA=0; scoreB=0; firstServer=(firstServer==='A')?'B':'A'; updateScores(); updateServer(); updatePointStatus(); }
+function updateServer(){
+  let total=scoreA+scoreB;
+  if(scoreA>=10 && scoreB>=10){ serveTurn=(total%2===0)?firstServer:(firstServer==='A'?'B':'A'); }
+  else { serveTurn=(Math.floor(total/2)%2===0)?firstServer:(firstServer==='A'?'B':'A'); }
+  document.getElementById('serveA').innerText=(serveTurn==='A')?"🔴":""; document.getElementById('serveB').innerText=(serveTurn==='B')?"🔴":""; 
+}
+function updatePointStatus(){
+  let statusA=""; let statusB="";
+  if(scoreA>=10 && scoreA>scoreB && !isGameFinished()) statusA="GAME POINT";
+  if(scoreB>=10 && scoreB>scoreA && !isGameFinished()) statusB="GAME POINT";
+  if(gamesA===GAMES_TO_WIN-1 && scoreA>=10 && !isGameFinished()) statusA="MATCH POINT";
+  if(gamesB===GAMES_TO_WIN-1 && scoreB>=10 && !isGameFinished()) statusB="MATCH POINT";
+  document.getElementById('pointAStatus').innerText=statusA;
+  document.getElementById('pointBStatus').innerText=statusB;
+}
+function nextGame(){
+  if(!isGameFinished()){ prepareTimer("WATER BREAK"); return; }
+  saveState();
+  if(scoreA>scoreB) gamesA++; else gamesB++;
+  document.getElementById('gamesA').innerText=gamesA;
+  document.getElementById('gamesB').innerText=gamesB;
+  let li=document.createElement('li');
+  li.innerText=`GAME ${gameNumber}: ${scoreA}-${scoreB}, WINNER ${scoreA>scoreB?'PLAYER A':'PLAYER B'}, FIRST SERVER ${firstServer}`;
+  document.getElementById('historyList').appendChild(li);
+  gameNumber++; scoreA=0; scoreB=0;
+  firstServer=(firstServer==='A')?'B':'A';
+  updateScores(); updateServer(); updatePointStatus();
+}
+function resetMatch(){
+  scoreA=0; scoreB=0; gamesA=0; gamesB=0; gameNumber=1;
+  cardCount={A:{yellow:0,red:0,timeout:0},B:{yellow:0,red:0,timeout:0}};
+  updateScores(); updateCards('A'); updateCards('B');
+  document.getElementById('gamesA').innerText=gamesA;
+  document.getElementById('gamesB').innerText=gamesB;
+  document.getElementById('historyList').innerHTML="";
+  historyStack=[];
+  updatePointStatus();
+}
 
-function updateCards(player){ let el=(player==='A')?document.getElementById('cardsA'):document.getElementById('cardsB'); let cards=[]; for(let i=0;i<cardCount[player].timeout;i++) cards.push("⬜"); for(let i=0;i<cardCount[player].yellow;i++) cards.push("🟨"); for(let i=0;i<cardCount[player].red;i++) cards.push("🟥"); el.innerText=cards.join(""); }
+// カード管理
+function updateCards(player){
+  let el = (player==='A')?document.getElementById('cardsA'):document.getElementById('cardsB');
+  el.innerHTML='';
+  for(let i=0;i<cardCount[player].timeout;i++){ let span=document.createElement('span'); span.className='timeout'; el.appendChild(span); }
+  for(let i=0;i<cardCount[player].yellow;i++){ let span=document.createElement('span'); span.className='yellow'; el.appendChild(span); }
+  for(let i=0;i<cardCount[player].red;i++){ let span=document.createElement('span'); span.className='red'; el.appendChild(span); }
+}
 function card(player,type){ saveState(); if(cardCount[player][type]!==undefined){ cardCount[player][type]++; updateCards(player); } }
 function removeCard(player,type){ saveState(); if(cardCount[player][type] && cardCount[player][type]>0){ cardCount[player][type]--; updateCards(player); } }
 function timeout(player){ card(player,'timeout'); prepareTimer("TIMEOUT"); }
-
-function resetMatch(){ scoreA=0; scoreB=0; gamesA=0; gamesB=0; gameNumber=1; cardCount={A:{yellow:0,red:0,timeout:0},B:{yellow:0,red:0,timeout:0}}; updateScores(); updateCards('A'); updateCards('B'); document.getElementById('gamesA').innerText=gamesA; document.getElementById('gamesB').innerText=gamesB; document.getElementById('historyList').innerHTML=""; historyStack=[]; updatePointStatus(); }
 function setMatchType(){ let type=document.getElementById("matchType").value; GAMES_TO_WIN=parseInt(type); resetMatch(); }
 </script>
 </body>
