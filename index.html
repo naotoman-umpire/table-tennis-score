@@ -62,22 +62,7 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   margin-top: 20px;
 }
 
-#splashScreen {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 400px;      /* 幅を固定 */
-  height: 300px;     /* 高さを固定 */
-  background-color: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transform: translate(-50%, -50%); /* 中央寄せ */
-  z-index: 1000;
-  opacity: 1;
-  transition: opacity 1s ease;
-  border-radius: 12px; /* 任意で角丸 */
-}
+
 
 
 
@@ -116,6 +101,7 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
 </div>
 
 <div class="overlay" id="mainScreen" style="display:none;">
+
 <div id="winner"></div>
 
 <div id="timerDisplay"></div>
@@ -223,18 +209,6 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   <h3>GAME HISTORY</h3>
   <ul id="historyList"></ul>
 </div>
-<!-- 起動時のロゴ表示 -->
-<div id="splashScreen" class="splash">
-  <img src="WTT_logo_1-scaled.jpg" alt="WTT Logo" class="splash-logo">
-</div>
-
-<!-- 設定オーバーレイ -->
-<div class="overlay" id="setupOverlay" style="display:none;">
-  <h2>試合設定</h2>
-  <!-- 名前入力、国旗選択、サーブ/コート選択など -->
-</div>
-
-
 
 
 <script>
@@ -593,40 +567,9 @@ function resetMatch(){
     document.getElementById('startScreen').style.display = 'flex';
 
     enableControls();
-
-    // ⭐ リセット後にスプラッシュを再表示
-    showSplash();
 }
 
 
-
-window.addEventListener('load', () => {
-    setTimeout(() => {
-        const splash = document.getElementById('splashScreen');
-        splash.style.opacity = 0;       // フェードアウト開始
-        setTimeout(() => splash.style.display = 'none', 1000); // 完全に消す
-    }, 3000); // 3秒後にフェードアウト
-});
-
-// スプラッシュを表示して3秒後に消す関数
-function showSplash() {
-    const splash = document.getElementById("splashScreen");
-    splash.style.display = "flex";  // 再表示
-    splash.style.opacity = 1;       // 不透明に戻す
-
-    // 3秒後にフェードアウト
-    setTimeout(() => {
-        splash.style.opacity = 0;
-        setTimeout(() => {
-            splash.style.display = "none";
-        }, 1000); // フェードアウト完了後に非表示
-    }, 3000);
-}
-
-// 起動時
-window.addEventListener('load', () => {
-    showSplash();
-});
 
 
 </script>
