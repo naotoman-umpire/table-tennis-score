@@ -71,13 +71,65 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
 }
 
 
-.point-btn {
-  font-size: 2.5em;      /* 文字をさらに大きく */
-  padding: 20px 40px;    /* ボタン全体を広く */
+
+.player {
+  position: relative;
+}
+
+.gamepoint {
+  position: absolute;
+  top: -20px;   /* 上方向に移動 */
+  right: 0;     /* 右に寄せる */
+  font-size: 1.5em;
+  color: red;
   font-weight: bold;
-  background-color: #ffeb3b;
-  border-radius: 12px;
-  margin: 10px;
+}
+
+
+.status {
+  display: block;
+  text-align: center;
+  font-size: 1.3em;     /* 少し小さめ */
+  color: red;  
+  font-weight: normal;  /* 太字をやめて通常表示 */
+  font-style: italic;   /* 斜体で差別化（任意） */
+  height: 1.5em;
+  line-height: 1.5em;
+  margin: 3px 0;
+}
+
+
+.card-buttons {
+  margin: 8px 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.card-btn {
+  font-size: 1.2em;
+  padding: 15px 25px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  color: #fff;
+}
+
+.yellow-card {
+  background-color: #FFD700; /* 金色 */
+  color: black;
+}
+
+.red-card {
+  background-color: #FF0000;
+}
+
+.remove-btn {
+  background-color: #555;
+}
+.card-btn:hover {
+  opacity: 0.8;
 }
 
 
@@ -161,11 +213,12 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   <span id="scoreA" class="score">0</span>
   <span id="serveA" class="serve"></span>
 </div>
-<div><span id="pointAStatus" class="status"></span></div>
+<div><span id="pointAStatus" class="status"></span></div> <!-- ここに移動 -->
+<button class="point-btn" onclick="addPoint('A')">+1 POINT</button>
 
 
-      <button class="point-btn" onclick="addPoint('A')">+1 POINT</button>
-      <button onclick="removePoint('A')">-1 POINT</button><br>
+
+       <button onclick="removePoint('A')">-1 POINT</button><br>
       <button onclick="timeout('A')">TIMEOUT</button>
       <button onclick="removeCard('A','timeout')">UNDO TIMEOUT</button>
       <div class="cards" id="cardsA"></div>
@@ -174,15 +227,16 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
      
 
  <h2>PLAYER B</h2>
-     <div class="player-score">
-  <span id="scoreB" class="score">0</span>
+ <div class="player-score">
   <span class="games" id="gamesB">0</span>
+  <span id="scoreB" class="score">0</span>
   <span id="serveB" class="serve"></span>
 </div>
-<div><span id="pointBStatus" class="status"></span></div>
+<div><span id="pointAStatus" class="status"></span></div> <!-- ここに移動 -->
+<button class="point-btn" onclick="addPoint('A')">+1 POINT</button>
 
- <button class="point-btn" onclick="addPoint('B')">+1 POINT</button>
-      <button onclick="removePoint('B')">-1 POINT</button><br>
+
+       <button onclick="removePoint('B')">-1 POINT</button><br>
       <button onclick="timeout('B')">TIMEOUT</button>
       <button onclick="removeCard('B','timeout')">UNDO TIMEOUT</button>
       <div class="cards" id="cardsB"></div>
@@ -200,30 +254,42 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   </div>
 </div>
 
-<div id="cardsTab" class="tab-content">
-  <h3>CARD MANAGEMENT</h3>
-  <div class="players">
-    <div class="player">
-      <h2>PLAYER A</h2>
-      <button onclick="card('A','yellow')">ADD YELLOW</button>
-      <button onclick="removeCard('A','yellow')">REMOVE YELLOW</button><br>
-      <button onclick="card('A','red')">ADD RED</button>
-      <button onclick="removeCard('A','red')">REMOVE RED</button>
-    </div>
-    <div class="player">
-      <h2>PLAYER B</h2>
-      <button onclick="card('B','yellow')">ADD YELLOW</button>
-      <button onclick="removeCard('B','yellow')">REMOVE YELLOW</button><br>
-      <button onclick="card('B','red')">ADD RED</button>
-      <button onclick="removeCard('B','red')">REMOVE RED</button>
-    </div>
-  </div>
-</div>
+
 
 <div id="historyTab" class="tab-content">
   <h3>GAME HISTORY</h3>
   <ul id="historyList"></ul>
 </div>
+
+<div id="cardsTab" class="tab-content">
+  <h3>CARD MANAGEMENT</h3>
+  <div class="players">
+    <div class="player">
+      <h2>PLAYER A</h2>
+      <div class="card-buttons">
+        <button class="card-btn yellow-card" onclick="card('A','yellow')">＋ Yellow</button>
+        <button class="card-btn remove-btn" onclick="removeCard('A','yellow')">－ Yellow</button>
+      </div>
+      <div class="card-buttons">
+        <button class="card-btn red-card" onclick="card('A','red')">＋ Red</button>
+        <button class="card-btn remove-btn" onclick="removeCard('A','red')">－ Red</button>
+      </div>
+    </div>
+
+    <div class="player">
+      <h2>PLAYER B</h2>
+      <div class="card-buttons">
+        <button class="card-btn yellow-card" onclick="card('B','yellow')">＋ Yellow</button>
+        <button class="card-btn remove-btn" onclick="removeCard('B','yellow')">－ Yellow</button>
+      </div>
+      <div class="card-buttons">
+        <button class="card-btn red-card" onclick="card('B','red')">＋ Red</button>
+        <button class="card-btn remove-btn" onclick="removeCard('B','red')">－ Red</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 
 <script>
@@ -640,6 +706,7 @@ function forceEndTimer(){
     showTimerButtons(false);
     document.getElementById('clearTimerBtn').style.display="none";
 }
+
 
 
 
