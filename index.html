@@ -62,6 +62,13 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
   margin-top: 20px;
 }
 
+#timerDisplay,
+#warmupTimer,
+#timeoutTimer,
+#waterbreakTimer {
+  color: blue;
+  font-weight: bold;
+}
 
 
 
@@ -106,11 +113,11 @@ button { font-size:1em; margin:5px; padding:8px 16px; }
 
 <div id="timerDisplay"></div>
 <div id="timerControls">
-  <button onclick="startTimer()">START TIMER</button>
-  <button onclick="stopTimer()">STOP TIMER</button>
+  <button onclick="stopTimer()">STOP</button>
   <button onclick="resetTimer()">RESET TIMER</button>
 </div>
 <button id="clearTimerBtn" onclick="forceEndTimer()">CLEAR TIMER</button>
+
 
 <div style="margin:10px 0;">
   <button onclick="prepareTimer('WARM UP')">SET WARM UP (120s)</button>
@@ -567,6 +574,63 @@ function resetMatch(){
     document.getElementById('startScreen').style.display = 'flex';
 
     enableControls();
+}
+
+function prepareTimer(type){
+    timerLabel = type;
+    if(type==="WARM UP") timerSeconds = 120;
+    else if(type==="WATER BREAK") timerSeconds = 60;
+    else if(type==="TIMEOUT") timerSeconds = 60;
+
+    updateTimerDisplay();
+    showTimerButtons(true);
+    document.getElementById('clearTimerBtn').style.display = "inline-block";
+    clearInterval(timerInterval);
+
+    if(type === "TIMEOUT"){
+        // タイムアウトは従来通り
+        timerInterval = setInterval(()=>{
+            if(timerSeconds > 0){
+                timerSeconds--;
+                updateTimerDisplay();
+            } else {
+                forceEndTimer();
+            }
+        },1000);
+    } else {
+        // 🔵 Warm Up / Water Break は即スタート
+        startTimer();
+    }
+}
+
+function startTimer(){
+    clearInterval(timerInterval);
+    timerInterval = setInterval(()=>{
+        if(timerSeconds > 0){
+            timerSeconds--;
+            updateTimerDisplay();
+        } else {
+            clearInterval(timerInterval);
+        }
+    },1000);
+}
+
+function stopTimer(){ clearInterval(timerInterval); }
+
+function resetTimer(){
+    if(timerLabel==="WARM UP") timerSeconds=120;
+    else if(timerLabel==="WATER BREAK") timerSeconds=60;
+    else if(timerLabel==="TIMEOUT") timerSeconds=60;
+    updateTimerDisplay();
+}
+
+function forceEndTimer(){
+    clearInterval(timerInterval);
+    timerSeconds=0;
+    timerLabel="";
+    document.getElementById('timerDisplay').innerText="";
+    showTimerButtons(false);
+    document.getElementById('clearTimerBtn').style.display="none";
 }
 
 
